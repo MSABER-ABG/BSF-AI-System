@@ -641,11 +641,7 @@ def render():
         )
 
         if view == "2D Scatter":
-            df_s = df.groupby('segment', group_keys=False).apply(
-                lambda x: x.sample(min(350, len(x)), random_state=42)
-            ).reset_index(drop=True).reset_index(drop=True)
-            if 'segment' not in df_s.columns:
-                df_s = df_s.copy()
+            df_s = _safe_sample(df, 350)
             fig2d = go.Figure()
             for seg in SEGMENT_ORDER:
                 sub = df_s[df_s['segment'] == seg]
@@ -673,9 +669,7 @@ def render():
             )
 
         elif view == "3D Scatter":
-            df_s = df.groupby('segment', group_keys=False).apply(
-                lambda x: x.sample(min(200, len(x)), random_state=42)
-            ).reset_index(drop=True).reset_index(drop=True)
+            df_s = _safe_sample(df, 200)
             fig3d = go.Figure()
             for seg in SEGMENT_ORDER:
                 sub = df_s[df_s['segment'] == seg]
