@@ -124,6 +124,16 @@ def _explain_card(text, color=ABG_BLUE):
 
 # ══════════════════════════════════════════════════════════════
 def render():
+    def _safe_sample(dataframe, n):
+        """Sample n rows per segment safely — works with all pandas versions."""
+        import pandas as pd
+        parts = []
+        for seg in SEGMENT_ORDER:
+            part = dataframe[dataframe['segment'] == seg]
+            if len(part) > 0:
+                parts.append(part.sample(min(n, len(part)), random_state=42))
+        return pd.concat(parts, ignore_index=True) if parts else dataframe.iloc[0:0]
+
     st.markdown(
         page_header(
             "Segmentation Analysis",
@@ -187,7 +197,12 @@ def render():
             **_layout(height=290, margin=dict(t=10,b=10,l=0,r=0)),
             showlegend=True,
             legend=dict(font=dict(size=11), orientation='v', x=0.85, y=0.5),
-            annotations=[],
+            annotations=[dict(
+                text=f"<b>{total_spend/1e9:.1f}B</b><br>SAR",
+                x=0.42, y=0.5, font_size=14,
+                font_family="Plus Jakarta Sans",
+                font_color=ABG_DARK, showarrow=False,
+            )],
         )
         st.plotly_chart(fig_donut, use_container_width=True)
 
@@ -628,8 +643,9 @@ def render():
         if view == "2D Scatter":
             df_s = df.groupby('segment', group_keys=False).apply(
                 lambda x: x.sample(min(350, len(x)), random_state=42)
-            ).reset_index(drop=True)
-
+            ).reset_index(drop=True).reset_index(drop=True)
+            if 'segment' not in df_s.columns:
+                df_s = df_s.copy()
             fig2d = go.Figure()
             for seg in SEGMENT_ORDER:
                 sub = df_s[df_s['segment'] == seg]
@@ -658,9 +674,8 @@ def render():
 
         elif view == "3D Scatter":
             df_s = df.groupby('segment', group_keys=False).apply(
-                lambda x: x.sample(min(350, len(x)), random_state=42)
-            ).reset_index(drop=True)
-            
+                lambda x: x.sample(min(200, len(x)), random_state=42)
+            ).reset_index(drop=True).reset_index(drop=True)
             fig3d = go.Figure()
             for seg in SEGMENT_ORDER:
                 sub = df_s[df_s['segment'] == seg]
